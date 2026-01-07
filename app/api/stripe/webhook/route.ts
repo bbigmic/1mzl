@@ -3,7 +3,7 @@ import Stripe from 'stripe'
 import { prisma } from '@/lib/prisma'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2024-01-19.acacia',
+  apiVersion: '2025-12-15.clover',
 })
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || ''
@@ -32,14 +32,20 @@ export async function POST(req: NextRequest) {
         const userId = session.metadata?.userId
         const plan = session.metadata?.plan
 
-        if (userId && plan) {
+        if (userId && plan && session.subscription) {
+          // Pobierz subskrypcję, aby uzyskać price_id
+          const subscription = await stripe.subscriptions.retrieve(
+            session.subscription as string
+          )
+          const priceId = subscription.items.data[0]?.price.id
+
           await prisma.subscription.update({
             where: { userId },
             data: {
               plan,
               status: 'active',
               stripeSubscriptionId: session.subscription as string,
-              stripePriceId: session.subscription_details?.metadata?.price_id,
+              stripePriceId: priceId,
             },
           })
         }
@@ -66,13 +72,15 @@ export async function POST(req: NextRequest) {
               },
             })
           } else {
+            // W nowszej wersji API Stripe, current_period_end jest dostępne bezpośrednio w obiekcie subscription z webhook
+            const periodEnd = (subscription as any).current_period_end
             await prisma.subscription.update({
               where: { id: dbSubscription.id },
               data: {
                 status: subscription.status,
-                stripeCurrentPeriodEnd: new Date(
-                  subscription.current_period_end * 1000
-                ),
+                stripeCurrentPeriodEnd: periodEnd
+                  ? new Date(periodEnd * 1000)
+                  : null,
               },
             })
           }
