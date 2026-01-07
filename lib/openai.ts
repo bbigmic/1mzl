@@ -63,3 +63,47 @@ export async function generateContent(
   }
 }
 
+export async function generateImage(
+  contentPrompt: string,
+  contentType: string
+): Promise<string> {
+  try {
+    // Stwórz optymalny prompt dla DALL-E na podstawie treści
+    const imagePrompts: Record<string, string> = {
+      article: 'profesjonalne, wysokiej jakości zdjęcie ilustrujące temat artykułu, styl edytorialny, realistyczne, 4K',
+      post: 'kolorowe, angażujące zdjęcie na social media, nowoczesne, przyciągające uwagę, wysokiej jakości',
+      product: 'profesjonalne zdjęcie produktu, studio photography, czyste tło, komercyjne, wysokiej jakości',
+      email: 'profesjonalne zdjęcie biznesowe, corporate style, wysokiej jakości, odpowiednie do marketingu',
+      ad: 'przyciągające uwagę zdjęcie reklamowe, komercyjne, profesjonalne, wysokiej jakości, marketingowe',
+    }
+
+    const stylePrompt = imagePrompts[contentType] || imagePrompts.article
+
+    // Stwórz prompt dla DALL-E na podstawie treści
+    // Użyj pierwszych 200 znaków treści jako inspiracji
+    const contentSummary = contentPrompt.substring(0, 200)
+    const imagePrompt = `${contentSummary}. ${stylePrompt}, mistrzowska jakość, profesjonalne oświetlenie, szczegółowe, 4K resolution`
+
+    const response = await openai.images.generate({
+      model: 'dall-e-3',
+      prompt: imagePrompt,
+      n: 1,
+      size: '1024x1024',
+      quality: 'hd',
+      style: 'vivid',
+    })
+
+    const imageUrl = response.data[0]?.url
+    if (!imageUrl) {
+      throw new Error('Nie udało się wygenerować URL zdjęcia')
+    }
+
+    return imageUrl
+  } catch (error: any) {
+    console.error('OpenAI Image Generation Error:', error)
+    throw new Error(
+      error.message || 'Nie udało się wygenerować zdjęcia. Sprawdź klucz API.'
+    )
+  }
+}
+

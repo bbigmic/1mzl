@@ -2,15 +2,17 @@
 
 import { useState, useEffect } from 'react'
 import { formatDate } from '@/lib/utils'
-import { FileText, Trash2, ChevronDown, ChevronUp, Copy } from 'lucide-react'
+import { FileText, Trash2, ChevronDown, ChevronUp, Copy, Image as ImageIcon, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
+import Image from 'next/image'
 
 interface Content {
   id: string
   title: string
   type: string
   content: string
+  imageUrl?: string | null
   createdAt: Date
 }
 
@@ -22,6 +24,7 @@ export function ContentList({ initialContents = [] }: ContentListProps) {
   const [contents, setContents] = useState<Content[]>(initialContents)
   const [loading, setLoading] = useState(false)
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+  const [generatingImages, setGeneratingImages] = useState<Set<string>>(new Set())
 
   const fetchContents = async () => {
     setLoading(true)
@@ -83,6 +86,51 @@ export function ContentList({ initialContents = [] }: ContentListProps) {
   const handleCopy = (content: string) => {
     navigator.clipboard.writeText(content)
     toast.success('Skopiowano!')
+  }
+
+  const handleGenerateImage = async (contentId: string) => {
+    // Check if image already exists
+    const content = contents.find((c) => c.id === contentId)
+    if (content?.imageUrl) {
+      toast.info('Zdjęcie już zostało wygenerowane')
+      return
+    }
+
+    setGeneratingImages((prev) => new Set(prev).add(contentId))
+    toast.loading('Generowanie mistrzowskiego zdjęcia...', { id: `image-${contentId}` })
+
+    try {
+      const response = await fetch('/api/generate-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contentId }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Błąd generowania zdjęcia')
+      }
+
+      // Update content with new image URL
+      setContents((prev) =>
+        prev.map((c) =>
+          c.id === contentId ? { ...c, imageUrl: result.imageUrl } : c
+        )
+      )
+
+      toast.success('Zdjęcie wygenerowane pomyślnie!', { id: `image-${contentId}` })
+    } catch (error: any) {
+      toast.error(error.message || 'Nie udało się wygenerować zdjęcia', {
+        id: `image-${contentId}`,
+      })
+    } finally {
+      setGeneratingImages((prev) => {
+        const newSet = new Set(prev)
+        newSet.delete(contentId)
+        return newSet
+      })
+    }
   }
 
   if (loading && contents.length === 0) {
@@ -150,14 +198,53 @@ export function ContentList({ initialContents = [] }: ContentListProps) {
                     )}
                   </button>
                 )}
+
+                {/* Generated Image */}
+                {content.imageUrl && (
+                  <div className="mt-4 rounded-lg overflow-hidden border border-gray-200">
+                    <div className="relative w-full h-64 bg-gray-100">
+                      <Image
+                        src={content.imageUrl}
+                        alt={content.title}
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
-              <div className="flex items-center space-x-2 ml-4">
+              <div className="flex items-center space-x-2 ml-4 flex-shrink-0">
                 <button
                   onClick={() => handleCopy(content.content)}
                   className="p-2 text-gray-600 hover:text-primary-600 transition"
-                  title="Kopiuj"
+                  title="Kopiuj treść"
                 >
                   <Copy className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => handleGenerateImage(content.id)}
+                  disabled={generatingImages.has(content.id) || !!content.imageUrl}
+                  className={`p-2 transition ${
+                    content.imageUrl
+                      ? 'text-green-600 cursor-default'
+                      : generatingImages.has(content.id)
+                      ? 'text-gray-400 cursor-not-allowed'
+                      : 'text-gray-600 hover:text-primary-600'
+                  }`}
+                  title={
+                    content.imageUrl
+                      ? 'Zdjęcie wygenerowane'
+                      : generatingImages.has(content.id)
+                      ? 'Generowanie...'
+                      : 'Generuj mistrzowskie zdjęcie'
+                  }
+                >
+                  {generatingImages.has(content.id) ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <ImageIcon className="h-4 w-4" />
+                  )}
                 </button>
                 <button
                   onClick={() => toggleExpand(content.id)}
