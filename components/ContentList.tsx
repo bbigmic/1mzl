@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { formatDate } from '@/lib/utils'
-import { FileText, Trash2, ChevronDown, ChevronUp, Copy, Image as ImageIcon, Loader2, ChevronRight } from 'lucide-react'
+import { FileText, Trash2, ChevronDown, ChevronUp, Copy, Image as ImageIcon, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -23,68 +23,27 @@ interface ContentListProps {
 export function ContentList({ initialContents = [] }: ContentListProps) {
   const [contents, setContents] = useState<Content[]>(initialContents)
   const [loading, setLoading] = useState(false)
-  const [loadingMore, setLoadingMore] = useState(false)
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
   const [generatingImages, setGeneratingImages] = useState<Set<string>>(new Set())
-  const [page, setPage] = useState(1)
-  const [hasMore, setHasMore] = useState(true)
-  const [total, setTotal] = useState(0)
 
-  const fetchContents = async (pageNum: number = 1, append: boolean = false) => {
-    if (append) {
-      setLoadingMore(true)
-    } else {
-      setLoading(true)
-    }
+  const fetchContents = async () => {
+    setLoading(true)
     try {
-      const response = await fetch(`/api/contents?limit=10&page=${pageNum}`)
+      const response = await fetch('/api/contents?limit=10')
       const data = await response.json()
       if (data.contents) {
-        if (append) {
-          setContents((prev) => [...prev, ...data.contents])
-        } else {
-          setContents(data.contents)
-        }
-        setTotal(data.pagination?.total || 0)
-        setHasMore(data.pagination?.page < data.pagination?.totalPages)
+        setContents(data.contents)
       }
     } catch (error) {
       toast.error('Błąd ładowania treści')
     } finally {
-      if (append) {
-        setLoadingMore(false)
-      } else {
-        setLoading(false)
-      }
+      setLoading(false)
     }
-  }
-
-  const handleLoadMore = async () => {
-    const nextPage = page + 1
-    await fetchContents(nextPage, true)
-    setPage(nextPage)
   }
 
   useEffect(() => {
     if (initialContents.length === 0) {
-      fetchContents(1, false)
-    } else {
-      // If we have initial contents, calculate which page we're on
-      // Dashboard shows 5 items, so we're on page 1 with 5 items
-      const itemsPerPage = 10
-      const currentPage = Math.ceil(initialContents.length / itemsPerPage)
-      setPage(currentPage)
-      // Fetch to check total count
-      fetch('/api/contents?limit=1')
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.pagination) {
-            setTotal(data.pagination.total)
-            // Check if we have more items than what's displayed
-            setHasMore(initialContents.length < data.pagination.total)
-          }
-        })
-        .catch(() => {})
+      fetchContents()
     }
   }, [initialContents.length])
 
@@ -310,27 +269,6 @@ export function ContentList({ initialContents = [] }: ContentListProps) {
           </div>
         )
       })}
-      {hasMore && (
-        <div className="p-4 border-t text-center">
-          <button
-            onClick={handleLoadMore}
-            disabled={loadingMore}
-            className="inline-flex items-center space-x-2 px-4 py-2 text-sm font-medium text-primary-600 hover:text-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loadingMore ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Ładowanie...</span>
-              </>
-            ) : (
-              <>
-                <span>Pokaż więcej</span>
-                <ChevronRight className="h-4 w-4" />
-              </>
-            )}
-          </button>
-        </div>
-      )}
     </div>
   )
 }
