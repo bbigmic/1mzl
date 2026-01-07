@@ -92,12 +92,12 @@ export function ContentList({ initialContents = [] }: ContentListProps) {
     // Check if image already exists
     const content = contents.find((c) => c.id === contentId)
     if (content?.imageUrl) {
-      toast('Zdjęcie już zostało wygenerowane', { icon: 'ℹ️' })
+      toast.info('Zdjęcie już zostało wygenerowane')
       return
     }
 
     setGeneratingImages((prev) => new Set(prev).add(contentId))
-    toast.loading('Generowanie mistrzowskiego zdjęcia...', { id: `image-${contentId}` })
+    toast.loading('Generowanie zdjęcia...', { id: `image-${contentId}` })
 
     try {
       const response = await fetch('/api/generate-image', {
