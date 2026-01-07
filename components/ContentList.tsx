@@ -42,7 +42,7 @@ export function ContentList({ initialContents = [] }: ContentListProps) {
     if (initialContents.length === 0) {
       fetchContents()
     }
-  }, [])
+  }, [initialContents.length])
 
   const handleDelete = async (id: string) => {
     if (!confirm('Czy na pewno chcesz usunąć tę treść?')) return

@@ -25,7 +25,7 @@ export default async function PricingPage() {
             Wybierz plan dla siebie
           </h1>
           <p className="text-xl text-gray-600">
-            Rozpocznij za darmo i upgrade'uj, gdy będziesz gotowy
+            Rozpocznij za darmo i upgrade&apos;uj, gdy będziesz gotowy
           </p>
         </div>
 

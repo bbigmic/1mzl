@@ -1,11 +1,14 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useSession, signOut } from 'next-auth/react'
 import { Sparkles, User, LogOut } from 'lucide-react'
+import { useState } from 'react'
 
 export function Navbar() {
   const { data: session, status } = useSession()
+  const [imageError, setImageError] = useState(false)
 
   return (
     <nav className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
@@ -34,15 +37,15 @@ export function Navbar() {
                   Cennik
                 </Link>
                 <div className="flex items-center space-x-2">
-                  {session.user?.image ? (
-                    <img
+                  {session.user?.image && !imageError ? (
+                    <Image
                       src={session.user.image}
                       alt={session.user.name || 'User'}
+                      width={32}
+                      height={32}
                       className="h-8 w-8 rounded-full border-2 border-gray-200"
-                      onError={(e) => {
-                        // Fallback jeśli obraz się nie załaduje
-                        e.currentTarget.style.display = 'none'
-                      }}
+                      onError={() => setImageError(true)}
+                      unoptimized
                     />
                   ) : (
                     <div className="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center">
