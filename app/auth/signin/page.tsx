@@ -3,9 +3,9 @@
 import { signIn } from 'next-auth/react'
 import { Sparkles, AlertCircle } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 
-export default function SignInPage() {
+function ErrorMessage() {
   const searchParams = useSearchParams()
   const error = searchParams.get('error')
   const [errorMessage, setErrorMessage] = useState<string>('')
@@ -32,6 +32,18 @@ export default function SignInPage() {
     }
   }, [error])
 
+  if (!errorMessage) return null
+
+  return (
+    <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start space-x-3">
+      <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+      <p className="text-sm text-red-800">{errorMessage}</p>
+    </div>
+  )
+}
+
+export default function SignInPage() {
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex items-center justify-center px-4">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
@@ -47,12 +59,9 @@ export default function SignInPage() {
           </p>
         </div>
 
-        {errorMessage && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start space-x-3">
-            <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-red-800">{errorMessage}</p>
-          </div>
-        )}
+        <Suspense fallback={null}>
+          <ErrorMessage />
+        </Suspense>
 
         <button
           onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
