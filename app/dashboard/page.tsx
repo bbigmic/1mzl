@@ -7,6 +7,8 @@ import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { FileText, TrendingUp, Clock } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions)
 
