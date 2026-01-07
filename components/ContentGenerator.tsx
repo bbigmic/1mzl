@@ -77,6 +77,9 @@ export function ContentGenerator() {
 
       setGeneratedContent(result.content.content)
       toast.success('Treść wygenerowana pomyślnie!')
+      
+      // Trigger content list refresh
+      window.dispatchEvent(new CustomEvent('contentGenerated'))
     } catch (error: any) {
       if (error.message && !error.message.includes('JSON')) {
         toast.error(error.message || 'Nie udało się wygenerować treści')

@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { formatDate } from '@/lib/utils'
-import { FileText, Trash2, ChevronDown, ChevronUp, Copy, Image as ImageIcon, Loader2 } from 'lucide-react'
+import { FileText, Trash2, ChevronDown, ChevronUp, Copy, Image as ImageIcon, Loader2, RefreshCw } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -18,16 +18,29 @@ interface Content {
 
 interface ContentListProps {
   initialContents?: Content[]
+  autoRefresh?: boolean
+  refreshInterval?: number
+  onRefreshReady?: (refreshFn: () => void) => void
 }
 
-export function ContentList({ initialContents = [] }: ContentListProps) {
+export function ContentList({ 
+  initialContents = [], 
+  autoRefresh = true,
+  refreshInterval = 30000,
+  onRefreshReady
+}: ContentListProps) {
   const [contents, setContents] = useState<Content[]>(initialContents)
   const [loading, setLoading] = useState(false)
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
   const [generatingImages, setGeneratingImages] = useState<Set<string>>(new Set())
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
-  const fetchContents = async () => {
-    setLoading(true)
+  const fetchContents = async (showLoading = false) => {
+    if (showLoading) {
+      setLoading(true)
+    }
+    setIsRefreshing(true)
     try {
       const response = await fetch('/api/contents?limit=10')
       const data = await response.json()
@@ -35,17 +48,55 @@ export function ContentList({ initialContents = [] }: ContentListProps) {
         setContents(data.contents)
       }
     } catch (error) {
-      toast.error('Błąd ładowania treści')
+      if (showLoading) {
+        toast.error('Błąd ładowania treści')
+      }
     } finally {
-      setLoading(false)
+      if (showLoading) {
+        setLoading(false)
+      }
+      setIsRefreshing(false)
     }
   }
 
   useEffect(() => {
+    // Initial fetch if no initial contents
     if (initialContents.length === 0) {
-      fetchContents()
+      fetchContents(true)
     }
-  }, [initialContents.length])
+
+    // Setup auto-refresh if enabled
+    if (autoRefresh) {
+      intervalRef.current = setInterval(() => {
+        fetchContents(false)
+      }, refreshInterval)
+
+      return () => {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current)
+        }
+      }
+    }
+  }, [initialContents.length, autoRefresh, refreshInterval])
+
+  // Listen for content generation events
+  useEffect(() => {
+    const handleContentGenerated = () => {
+      fetchContents(false)
+    }
+
+    window.addEventListener('contentGenerated', handleContentGenerated)
+    return () => {
+      window.removeEventListener('contentGenerated', handleContentGenerated)
+    }
+  }, [])
+
+  // Expose refresh function to parent
+  useEffect(() => {
+    if (onRefreshReady) {
+      onRefreshReady(() => fetchContents(false))
+    }
+  }, [onRefreshReady])
 
   const handleDelete = async (id: string) => {
     if (!confirm('Czy na pewno chcesz usunąć tę treść?')) return

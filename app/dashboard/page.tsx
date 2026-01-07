@@ -1,6 +1,6 @@
 import { Navbar } from '@/components/Navbar'
 import { ContentGenerator } from '@/components/ContentGenerator'
-import { ContentList } from '@/components/ContentList'
+import { RecentContentSection } from '@/components/RecentContentSection'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
@@ -98,12 +98,7 @@ export default async function DashboardPage() {
           </div>
 
           {/* Recent Content */}
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              Ostatnie treści
-            </h2>
-            <ContentList initialContents={recentContent} />
-          </div>
+          <RecentContentSection initialContents={recentContent} />
         </div>
       </div>
     </div>
