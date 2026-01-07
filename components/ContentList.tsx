@@ -92,7 +92,7 @@ export function ContentList({ initialContents = [] }: ContentListProps) {
     // Check if image already exists
     const content = contents.find((c) => c.id === contentId)
     if (content?.imageUrl) {
-      toast.info('Zdjęcie już zostało wygenerowane')
+      toast('Zdjęcie już zostało wygenerowane', { icon: 'ℹ️' })
       return
     }
 

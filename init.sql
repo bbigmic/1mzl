@@ -70,6 +70,7 @@ CREATE TABLE IF NOT EXISTS "Content" (
     "type" TEXT NOT NULL,
     "prompt" TEXT NOT NULL,
     "content" TEXT NOT NULL,
+    "imageUrl" TEXT,
     "metadata" JSONB,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
