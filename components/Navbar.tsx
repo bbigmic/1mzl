@@ -53,7 +53,7 @@ export function Navbar() {
                     </div>
                   )}
                   <button
-                    onClick={() => signOut({ callbackUrl: '/' })}
+                    onClick={() => signOut({ callbackUrl: '/', redirect: true })}
                     className="flex items-center space-x-1 text-gray-700 hover:text-red-600 transition"
                   >
                     <LogOut className="h-4 w-4" />

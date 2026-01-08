@@ -47,6 +47,8 @@ model User {
   sessions      Session[]
   subscription  Subscription?
   contents      Content[]
+  emailLists    EmailList[]
+  campaigns     EmailCampaign[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -85,5 +87,79 @@ model Content {
   metadata    Json?    // Additional data like word count, tone, etc.
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model EmailList {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  description String?  @db.Text
+  subscribers EmailSubscriber[]
+  campaigns   EmailCampaign[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model EmailSubscriber {
+  id          String    @id @default(cuid())
+  emailListId String
+  emailList   EmailList @relation(fields: [emailListId], references: [id], onDelete: Cascade)
+  email       String
+  name        String?
+  status      String    @default("pending") // pending, subscribed, unsubscribed, bounced
+  source      String?   // where they came from
+  metadata    Json?     // Additional data
+  subscribedAt DateTime?
+  unsubscribedAt DateTime?
+  emails      Email[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([emailListId, email])
+  @@index([email])
+  @@index([status])
+}
+
+model EmailCampaign {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emailListId String
+  emailList   EmailList @relation(fields: [emailListId], references: [id], onDelete: Cascade)
+  name        String
+  subject     String
+  content     String   @db.Text
+  htmlContent String?  @db.Text
+  status      String   @default("draft") // draft, scheduled, sending, sent, paused, canceled
+  scheduledAt DateTime?
+  sentAt      DateTime?
+  stats       Json?    // opens, clicks, bounces, unsubscribes
+  emails      Email[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Email {
+  id          String   @id @default(cuid())
+  campaignId  String
+  campaign    EmailCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  subscriberId String
+  subscriber  EmailSubscriber @relation(fields: [subscriberId], references: [id], onDelete: Cascade)
+  to          String
+  subject     String
+  status      String   @default("pending") // pending, sent, delivered, bounced, failed, opened, clicked
+  sentAt      DateTime?
+  deliveredAt DateTime?
+  openedAt    DateTime?
+  clickedAt   DateTime?
+  bounceReason String? @db.Text
+  trackingId  String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([campaignId])
+  @@index([status])
+  @@index([trackingId])
 }
 

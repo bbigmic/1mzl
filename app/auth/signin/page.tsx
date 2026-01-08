@@ -64,7 +64,7 @@ export default function SignInPage() {
         </Suspense>
 
         <button
-          onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
+          onClick={() => signIn('google', { callbackUrl: '/dashboard', redirect: true })}
           className="w-full bg-white border-2 border-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-50 transition font-semibold flex items-center justify-center space-x-3"
         >
           <svg className="h-5 w-5" viewBox="0 0 24 24">
